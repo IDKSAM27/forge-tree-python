@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forge-tree"
+version = "0.1.0"
+authors = [
+    {name = "Sampreet Patil", email = "sampreetpatil270@gmail.com"},
+]
+description = "A powerful project scaffolding tool that generates folder and file structures from text representations"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: System :: Systems Administration",
+]
+keywords = ["scaffold", "generator", "cli", "project", "template"]
+dependencies = [
+    "click>=8.0.0",
+    "rich>=12.0.0",
+    "jinja2>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/forge-tree-python"
+Documentation = "https://github.com/yourusername/forge-tree-python#readme"
+Repository = "https://github.com/yourusername/forge-tree-python"
+"Bug Tracker" = "https://github.com/yourusername/forge-tree-python/issues"
+"Rust Version" = "https://github.com/yourusername/forge-tree"
+"Rust Package" = "https://crates.io/crates/forge-tree"
+
+[project.scripts]
+forge-tree = "forge_tree.cli:main"
