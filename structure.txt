@@ -1,0 +1,19 @@
+my-python-app/
+├── src/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── user.py
+│   └── utils/
+│       ├── __init__.py
+│       └── helpers.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_main.py
+│   └── test_models/
+│       └── test_user.py
+├── requirements.txt
+├── setup.py
+├── README.md
+└── .gitignore

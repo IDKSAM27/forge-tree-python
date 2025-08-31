@@ -1,0 +1,48 @@
+full-stack-app/
+├── backend/
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── users.py
+│   │   │   └── posts.py
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── database.py
+│   │   │   └── schemas.py
+│   │   └── middleware/
+│   │       ├── __init__.py
+│   │       └── cors.py
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── settings.py
+│   │   └── database.py
+│   ├── main.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Header.js
+│   │   │   ├── Footer.js
+│   │   │   └── Sidebar.js
+│   │   ├── pages/
+│   │   │   ├── Home.js
+│   │   │   ├── Login.js
+│   │   │   └── Dashboard.js
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   └── App.js
+│   ├── public/
+│   │   ├── index.html
+│   │   └── favicon.ico
+│   └── package.json
+├── tests/
+│   ├── backend/
+│   │   ├── test_api.py
+│   │   └── test_models.py
+│   └── frontend/
+│       └── app.test.js
+├── docker-compose.yml
+├── README.md
+└── .env.example

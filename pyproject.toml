@@ -43,11 +43,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/forge-tree-python"
-Documentation = "https://github.com/yourusername/forge-tree-python#readme"
-Repository = "https://github.com/yourusername/forge-tree-python"
-"Bug Tracker" = "https://github.com/yourusername/forge-tree-python/issues"
-"Rust Version" = "https://github.com/yourusername/forge-tree"
+Homepage = "https://github.com/IDKSAM27/forge-tree-python"
+Documentation = "https://github.com/IDKSAM27/forge-tree-python#readme"
+Repository = "https://github.com/IDKSAM27/forge-tree-python"
+"Bug Tracker" = "https://github.com/IDKSAM27/forge-tree-python/issues"
+"Rust Version" = "https://github.com/IDKSAM27/forge-tree"
 "Rust Package" = "https://crates.io/crates/forge-tree"
 
 [project.scripts]
