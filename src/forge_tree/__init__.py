@@ -23,10 +23,10 @@ from .generator.file_generator import FileGenerator as Generator
 from .errors import ForgeTreeError
 
 __version__ = "0.1.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__author__ = "Sampreet Patil"
+__email__ = "sampreetpatil270@gmail.com"
 __description__ = "Python implementation of forge-tree - Transform ASCII trees into real project structures"
-__repository__ = "https://github.com/yourusername/forge-tree-python"
-__rust_version__ = "https://github.com/yourusername/forge-tree"
+__repository__ = "https://github.com/IDKSAM27/forge-tree-python"
+__rust_version__ = "https://github.com/IDKSAM27/forge-tree"
 
 __all__ = ["Parser", "Generator", "ForgeTreeError"]
