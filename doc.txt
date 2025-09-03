@@ -1,0 +1,18 @@
+# 2. Clean previous builds
+rm -rf dist/ build/ *.egg-info/
+
+# 3. Format code
+python -m black .
+
+# 4. Type check (should now pass)
+python -m mypy src/
+
+# 5. Build package
+python -m build
+
+# 6. Install in editable mode
+pip install -e .
+
+# 7. Test the fix
+rm -rf my-python-app/  # Clean any existing output
+forge-tree forge structure.txt --verbose

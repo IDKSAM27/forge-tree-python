@@ -51,8 +51,8 @@ class TreeParser:
         root_name = self._extract_root_name(lines[0])
 
         if len(lines) > 1:
-            # Start parsing from line 1 (after root) with depth 0
-            items, _ = self._parse_structure(lines, 1, 0)
+            # FIXED: Start parsing from line 1 with current_depth=1 (not 0)
+            items, _ = self._parse_structure(lines, 1, 1)
         else:
             items = []
 
@@ -69,7 +69,7 @@ class TreeParser:
         self, lines: List[str], start_index: int, current_depth: int
     ) -> Tuple[List[StructureItem], int]:
         """Parse the structure lines into StructureItem objects with proper sibling handling."""
-        items = []
+        items: List[StructureItem] = []  # FIXED: Add explicit type annotation
         i = start_index
 
         while i < len(lines):
