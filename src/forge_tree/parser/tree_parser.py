@@ -2,7 +2,7 @@
 
 import re
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
 
 from ..errors import ForgeTreeError
@@ -44,7 +44,8 @@ class TreeParser:
         root_name = self._extract_root_name(lines[0])
         
         if len(lines) > 1:
-            items = self._parse_structure(lines[1:])
+            # Start parsing from line 1 (after root) with depth 0
+            items, _ = self._parse_structure(lines, 1, 0)
         else:
             items = []
         
@@ -57,13 +58,10 @@ class TreeParser:
             raise ForgeTreeError("Invalid root directory name")
         return name
     
-    def _parse_structure(self, lines: List[str]) -> List[StructureItem]:
-        """Parse the structure lines into StructureItem objects."""
-        if not lines:
-            return []
-        
+    def _parse_structure(self, lines: List[str], start_index: int, current_depth: int) -> Tuple[List[StructureItem], int]:
+        """Parse the structure lines into StructureItem objects with proper sibling handling."""
         items = []
-        i = 0
+        i = start_index
         
         while i < len(lines):
             line = lines[i]
@@ -71,40 +69,32 @@ class TreeParser:
                 i += 1
                 continue
             
-            current_depth = self._get_depth(line)
-            name, is_directory = self._parse_line(line)
+            depth = self._get_depth(line)
             
-            item = StructureItem(
-                name=name,
-                item_type=ItemType.DIRECTORY if is_directory else ItemType.FILE
-            )
-            
-            # Collect children
-            i += 1
-            child_lines = []
-            
-            while i < len(lines):
-                child_line = lines[i]
-                if not child_line.strip():
-                    i += 1
-                    continue
+            if depth < current_depth:
+                # We've returned to an ancestor level - stop parsing at this level
+                break
+            elif depth > current_depth:
+                # This line is deeper - it should be a child of the previous item
+                if not items:
+                    raise ForgeTreeError(f"Invalid tree structure at line: {line}")
                 
-                child_depth = self._get_depth(child_line)
-                
-                if child_depth <= current_depth:
-                    break
-                
-                child_lines.append(child_line)
+                # Recursively parse children and update the index
+                children, new_i = self._parse_structure(lines, i, depth)
+                items[-1].children = children
+                items[-1].item_type = ItemType.DIRECTORY  # Has children, must be directory
+                i = new_i
+            else:
+                # Same depth - this is a sibling, parse it normally
+                name, is_directory = self._parse_line(line)
+                item = StructureItem(
+                    name=name,
+                    item_type=ItemType.DIRECTORY if is_directory else ItemType.FILE
+                )
+                items.append(item)
                 i += 1
-            
-            # Recursively parse children
-            if child_lines:
-                item.children = self._parse_structure(child_lines)
-                item.item_type = ItemType.DIRECTORY  # Has children, must be directory
-            
-            items.append(item)
         
-        return items
+        return items, i
     
     def _get_depth(self, line: str) -> int:
         """Calculate the indentation depth of a line."""
@@ -118,7 +108,7 @@ class TreeParser:
                 break
         return depth
     
-    def _parse_line(self, line: str) -> tuple[str, bool]:
+    def _parse_line(self, line: str) -> Tuple[str, bool]:
         """Parse a line to extract name and determine if it's a directory."""
         # Remove tree characters and get content
         content = ''.join(char for char in line if char not in '│├└─ \t').strip()
