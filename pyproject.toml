@@ -52,3 +52,26 @@ Repository = "https://github.com/IDKSAM27/forge-tree-python"
 
 [project.scripts]
 forge-tree = "forge_tree.cli:main"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+follow_imports = "normal"
+implicit_reexport = true
+show_error_context = true
+show_column_numbers = true
+show_error_codes = true
+
+# Ignore missing imports for third-party libraries
+[[tool.mypy.overrides]]
+module = "jinja2.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rich.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "click.*"
+ignore_missing_imports = true

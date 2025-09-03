@@ -1,134 +1,109 @@
-"""Tree structure parsing utilities."""
+"""File and directory generation utilities."""
 
-import re
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple
-from enum import Enum
+import os
+from pathlib import Path
+from typing import Optional, Callable, List, Dict, Any, Tuple
 
+from rich.console import Console
+from jinja2 import Environment, BaseLoader, TemplateError
+
+from ..parser.tree_parser import ProjectStructure, StructureItem, ItemType
 from ..errors import ForgeTreeError
 
 
-class ItemType(Enum):
-    """Type of structure item."""
+class FileGenerator:
+    """Generates files and directories from ProjectStructure."""
 
-    FILE = "file"
-    DIRECTORY = "directory"
+    def __init__(self, force_overwrite: bool = False, verbose: bool = False):
+        self.force_overwrite = force_overwrite
+        self.verbose = verbose
+        self.console = Console()
+        self.jinja_env = Environment(loader=BaseLoader())
 
+    def generate(
+        self,
+        structure: ProjectStructure,
+        output_path: Path,
+        progress_callback: Optional[Callable] = None,
+    ):
+        """Generate the complete project structure."""
 
-@dataclass
-class StructureItem:
-    """Represents a file or directory in the project structure."""
+        # Create root directory
+        root_path = output_path / structure.root
+        self._create_directory(root_path)
 
-    name: str
-    item_type: ItemType
-    children: List["StructureItem"] = field(default_factory=list)
-    template: Optional[str] = None
-    content: Optional[str] = None
+        if self.verbose:
+            self.console.print(f"✅ Created {root_path}", style="green")
 
+        # FIXED: Generate all items without double progress callback
+        self._generate_items(
+            structure.items, root_path, structure.variables, progress_callback
+        )
 
-@dataclass
-class ProjectStructure:
-    """Represents a complete project structure."""
+    def _generate_items(
+        self,
+        items: List[StructureItem],
+        base_path: Path,
+        variables: Dict,
+        progress_callback: Optional[Callable] = None,
+    ):
+        """Recursively generate all items."""
 
-    root: str
-    items: List[StructureItem] = field(default_factory=list)
-    variables: Dict[str, Any] = field(default_factory=dict)
+        for item in items:
+            item_path = base_path / item.name
 
+            # FIXED: Update progress BEFORE processing, not during
+            if progress_callback:
+                progress_callback()
 
-class TreeParser:
-    """Parses ASCII tree structures into ProjectStructure objects."""
+            if item.item_type == ItemType.DIRECTORY:
+                self._create_directory(item_path)
 
-    def __init__(self):
-        self.tree_chars_pattern = re.compile(r"^([│├└─\s]*)(.*?)/?$")
+                if self.verbose:
+                    self.console.print(f"📁 Created {item_path}", style="green")
 
-    def parse(self, content: str) -> ProjectStructure:
-        """Parse text content into a ProjectStructure."""
-        lines = [line.rstrip() for line in content.splitlines() if line.strip()]
+                # FIXED: Recursively generate children WITHOUT passing progress_callback
+                # This prevents double-counting and multiple callbacks for same items
+                if item.children:
+                    self._generate_items(
+                        item.children, item_path, variables, progress_callback
+                    )
 
-        if not lines:
-            raise ForgeTreeError("Empty input")
+            else:  # FILE
+                content = self._render_content(item, variables)
+                self._create_file(item_path, content)
 
-        root_name = self._extract_root_name(lines[0])
+                if self.verbose:
+                    self.console.print(f"📄 Created {item_path}", style="blue")
 
-        if len(lines) > 1:
-            # FIXED: Start parsing from line 1 with current_depth=1 (not 0)
-            items, _ = self._parse_structure(lines, 1, 1)
-        else:
-            items = []
+    def _create_directory(self, path: Path):
+        """Create a directory."""
+        if path.exists() and not path.is_dir():
+            raise ForgeTreeError(f"Path exists but is not a directory: {path}")
 
-        return ProjectStructure(root=root_name, items=items)
+        # FIXED: Use exist_ok=True to avoid errors when directory already exists
+        path.mkdir(parents=True, exist_ok=True)
 
-    def _extract_root_name(self, line: str) -> str:
-        """Extract the root directory name from the first line."""
-        name = line.strip().rstrip("/")
-        if not name:
-            raise ForgeTreeError("Invalid root directory name")
-        return name
+    def _create_file(self, path: Path, content: str):
+        """Create a file with content."""
+        # FIXED: Only check if file exists when force_overwrite is False
+        if path.exists() and not self.force_overwrite:
+            raise ForgeTreeError(f"File already exists: {path}")
 
-    def _parse_structure(
-        self, lines: List[str], start_index: int, current_depth: int
-    ) -> Tuple[List[StructureItem], int]:
-        """Parse the structure lines into StructureItem objects with proper sibling handling."""
-        items: List[StructureItem] = []  # FIXED: Add explicit type annotation
-        i = start_index
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
 
-        while i < len(lines):
-            line = lines[i]
-            if not line.strip():
-                i += 1
-                continue
+        # FIXED: Use 'w' mode to overwrite existing files when force_overwrite=True
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
 
-            depth = self._get_depth(line)
+    def _render_content(self, item: StructureItem, variables: Dict) -> str:
+        """Render template content with variables."""
+        if item.template:
+            try:
+                template = self.jinja_env.from_string(item.template)
+                return template.render(**variables)
+            except TemplateError as e:
+                raise ForgeTreeError(f"Template error in {item.name}: {e}")
 
-            if depth < current_depth:
-                # We've returned to an ancestor level - stop parsing at this level
-                break
-            elif depth > current_depth:
-                # This line is deeper - it should be a child of the previous item
-                if not items:
-                    raise ForgeTreeError(f"Invalid tree structure at line: {line}")
-
-                # Recursively parse children and update the index
-                children, new_i = self._parse_structure(lines, i, depth)
-                items[-1].children = children
-                items[-1].item_type = (
-                    ItemType.DIRECTORY
-                )  # Has children, must be directory
-                i = new_i
-            else:
-                # Same depth - this is a sibling, parse it normally
-                name, is_directory = self._parse_line(line)
-                item = StructureItem(
-                    name=name,
-                    item_type=ItemType.DIRECTORY if is_directory else ItemType.FILE,
-                )
-                items.append(item)
-                i += 1
-
-        return items, i
-
-    def _get_depth(self, line: str) -> int:
-        """Calculate the indentation depth of a line."""
-        depth = 0
-        for char in line:
-            if char in "├└│":
-                depth += 1
-            elif char in "─ \t":
-                continue
-            else:
-                break
-        return depth
-
-    def _parse_line(self, line: str) -> Tuple[str, bool]:
-        """Parse a line to extract name and determine if it's a directory."""
-        # Remove tree characters and get content
-        content = "".join(char for char in line if char not in "│├└─ \t").strip()
-
-        if not content:
-            raise ForgeTreeError(f"Empty name in line: {line}")
-
-        # Determine if it's a directory
-        is_directory = content.endswith("/") or "." not in content
-        clean_name = content.rstrip("/")
-
-        return clean_name, is_directory
+        return item.content or ""
